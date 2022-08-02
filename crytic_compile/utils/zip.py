@@ -15,9 +15,7 @@ if TYPE_CHECKING:
 
 
 def _to_str(txt: Union[bytes, str]) -> str:
-    if isinstance(txt, bytes):
-        return txt.decode("utf8")
-    return txt
+    return txt.decode("utf8") if isinstance(txt, bytes) else txt
 
 
 def load_from_zip(target: str) -> List["CryticCompile"]:
@@ -32,10 +30,13 @@ def load_from_zip(target: str) -> List["CryticCompile"]:
 
     compilations = []
     with ZipFile(target, "r") as file_desc:
-        for project in file_desc.namelist():
-            compilations.append(
-                CryticCompile(_to_str(file_desc.read(project)), compile_force_framework="Archive")
+        compilations.extend(
+            CryticCompile(
+                _to_str(file_desc.read(project)),
+                compile_force_framework="Archive",
             )
+            for project in file_desc.namelist()
+        )
 
     return compilations
 

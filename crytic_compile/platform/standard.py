@@ -64,7 +64,7 @@ class Standard(AbstractPlatform):
 
         :param target: A string path to a standard json
         """
-        super().__init__(str(target), **kwargs)
+        super().__init__(target, **kwargs)
         self._underlying_platform: Type[AbstractPlatform] = Standard
         self._unit_tests: List[str] = []
 
@@ -97,12 +97,13 @@ class Standard(AbstractPlatform):
         :param target:
         :return:
         """
-        standard_ignore = kwargs.get("standard_ignore", False)
-        if standard_ignore:
+        if standard_ignore := kwargs.get("standard_ignore", False):
             return False
-        if not Path(target).parts:
-            return False
-        return Path(target).parts[-1].endswith("_export.json")
+        return (
+            Path(target).parts[-1].endswith("_export.json")
+            if Path(target).parts
+            else False
+        )
 
     def is_dependency(self, path: str) -> bool:
         """
@@ -139,31 +140,44 @@ def generate_standard_export(crytic_compile: "CryticCompile") -> Dict:
     """
     compilation_units = {}
     for key, compilation_unit in crytic_compile.compilation_units.items():
-        contracts = dict()
+        contracts = {}
         for contract_name in compilation_unit.contracts_names:
             filename = compilation_unit.filename_of_contract(contract_name)
             libraries = compilation_unit.libraries_names_and_patterns(contract_name)
             contracts[contract_name] = {
                 "abi": compilation_unit.abi(contract_name),
                 "bin": compilation_unit.bytecode_init(contract_name),
-                "bin-runtime": compilation_unit.bytecode_runtime(contract_name),
-                "srcmap": ";".join(compilation_unit.srcmap_init(contract_name)),
-                "srcmap-runtime": ";".join(compilation_unit.srcmap_runtime(contract_name)),
+                "bin-runtime": compilation_unit.bytecode_runtime(
+                    contract_name
+                ),
+                "srcmap": ";".join(
+                    compilation_unit.srcmap_init(contract_name)
+                ),
+                "srcmap-runtime": ";".join(
+                    compilation_unit.srcmap_runtime(contract_name)
+                ),
                 "filenames": {
                     "absolute": filename.absolute,
                     "used": filename.used,
                     "short": filename.short,
                     "relative": filename.relative,
                 },
-                "libraries": dict(libraries) if libraries else dict(),
-                "is_dependency": crytic_compile.is_dependency(filename.absolute),
-                "userdoc": compilation_unit.natspec[contract_name].userdoc.export(),
-                "devdoc": compilation_unit.natspec[contract_name].devdoc.export(),
+                "libraries": dict(libraries) if libraries else {},
+                "is_dependency": crytic_compile.is_dependency(
+                    filename.absolute
+                ),
+                "userdoc": compilation_unit.natspec[
+                    contract_name
+                ].userdoc.export(),
+                "devdoc": compilation_unit.natspec[
+                    contract_name
+                ].devdoc.export(),
             }
+
 
         # Create our root object to contain the contracts and other information.
 
-        compiler: Dict = dict()
+        compiler: Dict = {}
         if compilation_unit.compiler_version:
             compiler = {
                 "compiler": compilation_unit.compiler_version.compiler,
@@ -177,14 +191,13 @@ def generate_standard_export(crytic_compile: "CryticCompile") -> Dict:
             "contracts": contracts,
         }
 
-    output = {
+    return {
         "compilation_units": compilation_units,
         "package": crytic_compile.package,
         "working_dir": str(crytic_compile.working_dir),
         "type": int(crytic_compile.platform.platform_type_used),
         "unit_tests": crytic_compile.platform.guessed_tests(),
     }
-    return output
 
 
 def _load_from_compile_legacy(crytic_compile: "CryticCompile", loaded_json: Dict) -> None:

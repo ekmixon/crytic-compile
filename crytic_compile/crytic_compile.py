@@ -1,6 +1,7 @@
 """
 CryticCompile main module. Handle the compilation.
 """
+
 import base64
 import glob
 import inspect
@@ -22,10 +23,6 @@ from crytic_compile.platform.standard import export_to_standard
 from crytic_compile.utils.naming import Filename
 from crytic_compile.utils.npm import get_package_name
 from crytic_compile.utils.zip import load_from_zip
-
-# Cycle dependency
-if TYPE_CHECKING:
-    pass
 
 LOGGER = logging.getLogger("CryticCompile")
 logging.basicConfig()
@@ -86,13 +83,13 @@ class CryticCompile:
         # This is not memory optimized, but allow an offset lookup in O(1)
         # Because we frequently do this lookup in Slither during the AST parsing
         # We decided to favor the running time versus memory
-        self._cached_offset_to_line: Dict[Filename, Dict[int, Tuple[int, int]]] = dict()
+        self._cached_offset_to_line: Dict[Filename, Dict[int, Tuple[int, int]]] = {}
         # Lines are indexed from 1
         self._cached_line_to_offset: Dict[Filename, Dict[int, int]] = defaultdict(dict)
 
         # Return the line from the line number
         # Note: line 1 is at index 0
-        self._cached_line_to_code: Dict[Filename, List[bytes]] = dict()
+        self._cached_line_to_code: Dict[Filename, List[bytes]] = {}
 
         self._working_dir = Path.cwd()
 
@@ -133,10 +130,11 @@ class CryticCompile:
         Check if the contract is share by multiple compilation unit
 
         """
-        count = 0
-        for compilation_unit in self._compilation_units.values():
-            if contract in compilation_unit.contracts_names:
-                count += 1
+        count = sum(
+            contract in compilation_unit.contracts_names
+            for compilation_unit in self._compilation_units.values()
+        )
+
         return count >= 2
 
     ###################################################################################
@@ -219,7 +217,7 @@ class CryticCompile:
 
         source_code = self._cached_line_to_code[file]
         acc = 0
-        lines_delimiters: Dict[int, Tuple[int, int]] = dict()
+        lines_delimiters: Dict[int, Tuple[int, int]] = {}
         for line_number, x in enumerate(source_code):
             self._cached_line_to_offset[file][line_number + 1] = acc
 
@@ -271,9 +269,7 @@ class CryticCompile:
             self._get_cached_line_to_code(file)
 
         lines = self._cached_line_to_code[file]
-        if line - 1 < 0 or line - 1 >= len(lines):
-            return None
-        return lines[line - 1]
+        return None if line < 1 or line - 1 >= len(lines) else lines[line - 1]
 
     @property
     def src_content(self) -> Dict[str, str]:
@@ -396,7 +392,7 @@ class CryticCompile:
         """
         Export to json. The json format can be crytic-compile, solc or truffle.
         """
-        export_format = kwargs.get("export_format", None)
+        export_format = kwargs.get("export_format")
         if export_format is None:
             return export_to_standard(self, **kwargs)
         if export_format not in PLATFORMS_EXPORT:
@@ -413,22 +409,23 @@ class CryticCompile:
     # pylint: disable=no-self-use
     def _init_platform(self, target: str, **kwargs: str) -> AbstractPlatform:
         platforms = get_platforms()
-        platform = None
-
         compile_force_framework: Union[str, None] = kwargs.get("compile_force_framework", None)
-        if compile_force_framework:
-            platform = next(
-                (p(target) for p in platforms if p.NAME.lower() == compile_force_framework.lower()),
-                None,
+        return (
+            (
+                next(
+                    (
+                        p(target)
+                        for p in platforms
+                        if p.NAME.lower() == compile_force_framework.lower()
+                    ),
+                    None,
+                )
+                if compile_force_framework
+                else None
             )
-
-        if not platform:
-            platform = next((p(target) for p in platforms if p.is_supported(target)), None)
-
-        if not platform:
-            platform = Solc(target)
-
-        return platform
+            or next((p(target) for p in platforms if p.is_supported(target)), None)
+            or Solc(target)
+        )
 
     def _compile(self, **kwargs: str) -> None:
         custom_build: Union[None, str] = kwargs.get("compile_custom_build", None)
@@ -438,8 +435,7 @@ class CryticCompile:
         else:
             self._platform.compile(self, **kwargs)
 
-        remove_metadata = kwargs.get("compile_remove_metadata", False)
-        if remove_metadata:
+        if remove_metadata := kwargs.get("compile_remove_metadata", False):
             for compilation_unit in self._compilation_units.values():
                 compilation_unit.remove_metadata()
 
@@ -514,8 +510,8 @@ def compile_all(target: str, **kwargs: str) -> List[CryticCompile]:
         filenames = glob.glob(os.path.join(target, "*.sol"))
         if not filenames:
             filenames = glob.glob(os.path.join(target, "*.vy"))
-            if not filenames:
-                filenames = globbed_targets
+        if not filenames:
+            filenames = globbed_targets
 
         # Determine if we're using --standard-solc option to
         # aggregate many files into a single compilation.
@@ -531,6 +527,6 @@ def compile_all(target: str, **kwargs: str) -> List[CryticCompile]:
             for filename in filenames:
                 compilations.append(CryticCompile(filename, **kwargs))
     else:
-        raise ValueError(f"Unresolved target: {str(target)}")
+        raise ValueError(f"Unresolved target: {target}")
 
     return compilations

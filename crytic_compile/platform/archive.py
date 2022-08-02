@@ -98,12 +98,13 @@ class Archive(AbstractPlatform):
         :param target:
         :return:
         """
-        archive_ignore = kwargs.get("standard_ignore", False)
-        if archive_ignore:
+        if archive_ignore := kwargs.get("standard_ignore", False):
             return False
-        if not Path(target).parts:
-            return False
-        return Path(target).parts[-1].endswith("_export_archive.json")
+        return (
+            Path(target).parts[-1].endswith("_export_archive.json")
+            if Path(target).parts
+            else False
+        )
 
     def is_dependency(self, _path: str) -> bool:
         """

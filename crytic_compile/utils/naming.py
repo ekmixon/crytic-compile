@@ -31,9 +31,7 @@ def extract_filename(name: str) -> str:
     """
     Convert '/path:Contract' to /path
     """
-    if not ":" in name:
-        return name
-    return name[: name.rfind(":")]
+    return name if ":" not in name else name[: name.rfind(":")]
 
 
 def combine_filename_name(filename: str, name: str) -> str:
@@ -44,7 +42,7 @@ def combine_filename_name(filename: str, name: str) -> str:
     :param name:
     :return:
     """
-    return filename + ":" + name
+    return f"{filename}:{name}"
 
 
 # pylint: disable=too-many-branches
@@ -69,9 +67,9 @@ def convert_filename(
     filename_txt = used_filename
     if platform.system() == "Windows":
         elements = list(Path(filename_txt).parts)
-        if elements[0] == "/" or elements[0] == "\\":
+        if elements[0] in ["/", "\\"]:
             elements = elements[1:]  # remove '/'
-            elements[0] = elements[0] + ":/"  # add :/
+            elements[0] = f"{elements[0]}:/"
         filename = Path(*elements)
     else:
         filename = Path(filename_txt)
@@ -112,11 +110,8 @@ def convert_filename(
             short = absolute.relative_to(working_dir)
         else:
             short = relative.relative_to(working_dir)
-    except ValueError:
+    except (ValueError, RuntimeError):
         short = relative
-    except RuntimeError:
-        short = relative
-
     short = relative_to_short(short)
 
     return Filename(

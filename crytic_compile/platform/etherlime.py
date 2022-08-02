@@ -53,7 +53,7 @@ class Etherlime(AbstractPlatform):
 
         build_directory = "build"
 
-        compile_arguments = kwargs.get("etherlime_compile_arguments", None)
+        compile_arguments = kwargs.get("etherlime_compile_arguments")
 
         if not etherlime_ignore_compile:
             cmd = ["etherlime", "compile", self._target, "deleteCompiledFiles=true"]
@@ -98,14 +98,16 @@ class Etherlime(AbstractPlatform):
             with open(file, encoding="utf8") as file_desc:
                 target_loaded = json.load(file_desc)
 
-                if version is None:
-                    if "compiler" in target_loaded:
-                        if "version" in target_loaded["compiler"]:
-                            version = re.findall(
-                                r"\d+\.\d+\.\d+", target_loaded["compiler"]["version"]
-                            )[0]
+                if (
+                    version is None
+                    and "compiler" in target_loaded
+                    and "version" in target_loaded["compiler"]
+                ):
+                    version = re.findall(
+                        r"\d+\.\d+\.\d+", target_loaded["compiler"]["version"]
+                    )[0]
 
-                if not "ast" in target_loaded:
+                if "ast" not in target_loaded:
                     continue
 
                 filename_txt = target_loaded["ast"]["absolutePath"]
@@ -144,8 +146,7 @@ class Etherlime(AbstractPlatform):
         :param target:
         :return:
         """
-        etherlime_ignore = kwargs.get("etherlime_ignore", False)
-        if etherlime_ignore:
+        if etherlime_ignore := kwargs.get("etherlime_ignore", False):
             return False
         if os.path.isfile(os.path.join(target, "package.json")):
             with open(os.path.join(target, "package.json"), encoding="utf8") as file_desc:
@@ -191,9 +192,7 @@ def _is_optimized(compile_arguments: Optional[str]) -> bool:
     :param compile_arguments:
     :return:
     """
-    if compile_arguments:
-        return "--run" in compile_arguments
-    return False
+    return "--run" in compile_arguments if compile_arguments else False
 
 
 def _relative_to_short(relative: Path) -> Path:

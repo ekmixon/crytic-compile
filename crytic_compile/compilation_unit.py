@@ -386,11 +386,11 @@ class CompilationUnit:
             # libraries are on the format __$kecckack(filename:contract_name)[34]$__
             # https://solidity.readthedocs.io/en/v0.5.7/050-breaking-changes.html#command-line-and-json-interfaces
 
-            lib_4 = "__" + lib + "_" * (38 - len(lib))
+            lib_4 = f"__{lib}" + "_" * (38 - len(lib))
 
             sha3_result = sha3.keccak_256()
             sha3_result.update(lib.encode("utf-8"))
-            lib_5 = "__$" + sha3_result.hexdigest()[:34] + "$__"
+            lib_5 = f"__${sha3_result.hexdigest()[:34]}$__"
 
             new_names[lib] = addr
             new_names[lib_4] = addr
@@ -399,26 +399,29 @@ class CompilationUnit:
             if lib in self.contracts_names:
                 lib_filename = self.contracts_filenames[lib]
 
-                lib_with_abs_filename = lib_filename.absolute + ":" + lib
-                lib_with_abs_filename = lib_with_abs_filename[0:36]
+                lib_with_abs_filename = f"{lib_filename.absolute}:{lib}"
+                lib_with_abs_filename = lib_with_abs_filename[:36]
 
-                lib_4 = "__" + lib_with_abs_filename + "_" * (38 - len(lib_with_abs_filename))
+                lib_4 = f"__{lib_with_abs_filename}" + "_" * (38 - len(lib_with_abs_filename))
                 new_names[lib_4] = addr
 
-                lib_with_used_filename = lib_filename.used + ":" + lib
-                lib_with_used_filename = lib_with_used_filename[0:36]
+                lib_with_used_filename = f"{lib_filename.used}:{lib}"
+                lib_with_used_filename = lib_with_used_filename[:36]
 
-                lib_4 = "__" + lib_with_used_filename + "_" * (38 - len(lib_with_used_filename))
+                lib_4 = f"__{lib_with_used_filename}" + "_" * (
+                    38 - len(lib_with_used_filename)
+                )
+
                 new_names[lib_4] = addr
 
                 sha3_result = sha3.keccak_256()
                 sha3_result.update(lib_with_abs_filename.encode("utf-8"))
-                lib_5 = "__$" + sha3_result.hexdigest()[:34] + "$__"
+                lib_5 = f"__${sha3_result.hexdigest()[:34]}$__"
                 new_names[lib_5] = addr
 
                 sha3_result = sha3.keccak_256()
                 sha3_result.update(lib_with_used_filename.encode("utf-8"))
-                lib_5 = "__$" + sha3_result.hexdigest()[:34] + "$__"
+                lib_5 = f"__${sha3_result.hexdigest()[:34]}$__"
                 new_names[lib_5] = addr
 
         return new_names
@@ -443,35 +446,40 @@ class CompilationUnit:
 
             # Some platform use only the contract name
             # Some use fimename:contract_name
-            name_with_absolute_filename = self.contracts_filenames[name].absolute + ":" + name
-            name_with_absolute_filename = name_with_absolute_filename[0:36]
+            name_with_absolute_filename = (
+                f"{self.contracts_filenames[name].absolute}:{name}"
+            )
 
-            name_with_used_filename = self.contracts_filenames[name].used + ":" + name
-            name_with_used_filename = name_with_used_filename[0:36]
+            name_with_absolute_filename = name_with_absolute_filename[:36]
+
+            name_with_used_filename = f"{self.contracts_filenames[name].used}:{name}"
+            name_with_used_filename = name_with_used_filename[:36]
 
             # Solidity 0.4
-            solidity_0_4 = "__" + name + "_" * (38 - len(name))
+            solidity_0_4 = f"__{name}" + "_" * (38 - len(name))
             if solidity_0_4 == lib_name:
                 return name, solidity_0_4
 
             # Solidity 0.4 with filename
-            solidity_0_4_filename = (
-                "__" + name_with_absolute_filename + "_" * (38 - len(name_with_absolute_filename))
+            solidity_0_4_filename = f"__{name_with_absolute_filename}" + "_" * (
+                38 - len(name_with_absolute_filename)
             )
+
             if solidity_0_4_filename == lib_name:
                 return name, solidity_0_4_filename
 
             # Solidity 0.4 with filename
-            solidity_0_4_filename = (
-                "__" + name_with_used_filename + "_" * (38 - len(name_with_used_filename))
+            solidity_0_4_filename = f"__{name_with_used_filename}" + "_" * (
+                38 - len(name_with_used_filename)
             )
+
             if solidity_0_4_filename == lib_name:
                 return name, solidity_0_4_filename
 
             # Solidity 0.5
             sha3_result = sha3.keccak_256()
             sha3_result.update(name.encode("utf-8"))
-            v5_name = "__$" + sha3_result.hexdigest()[:34] + "$__"
+            v5_name = f"__${sha3_result.hexdigest()[:34]}$__"
 
             if v5_name == lib_name:
                 return name, v5_name
@@ -479,14 +487,14 @@ class CompilationUnit:
             # Solidity 0.5 with filename
             sha3_result = sha3.keccak_256()
             sha3_result.update(name_with_absolute_filename.encode("utf-8"))
-            v5_name = "__$" + sha3_result.hexdigest()[:34] + "$__"
+            v5_name = f"__${sha3_result.hexdigest()[:34]}$__"
 
             if v5_name == lib_name:
                 return name, v5_name
 
             sha3_result = sha3.keccak_256()
             sha3_result.update(name_with_used_filename.encode("utf-8"))
-            v5_name = "__$" + sha3_result.hexdigest()[:34] + "$__"
+            v5_name = f"__${sha3_result.hexdigest()[:34]}$__"
 
             if v5_name == lib_name:
                 return name, v5_name
@@ -497,12 +505,13 @@ class CompilationUnit:
         if len(self._contracts_name) == 2:
             return next(
                 (
-                    (c, "__" + c + "_" * (38 - len(c)))
+                    (c, f"__{c}" + "_" * (38 - len(c)))
                     for c in self._contracts_name
                     if c != original_contract
                 ),
                 None,
             )
+
 
         return None
 
@@ -571,21 +580,20 @@ class CompilationUnit:
         :param name:
         :return:
         """
-        if not name in self._hashes:
+        if name not in self._hashes:
             self._compute_hashes(name)
         return self._hashes[name]
 
     def _compute_hashes(self, name: str) -> None:
         self._hashes[name] = {}
         for sig in self.abi(name):
-            if "type" in sig:
-                if sig["type"] == "function":
-                    sig_name = sig["name"]
-                    arguments = ",".join([x["type"] for x in sig["inputs"]])
-                    sig = f"{sig_name}({arguments})"
-                    sha3_result = sha3.keccak_256()
-                    sha3_result.update(sig.encode("utf-8"))
-                    self._hashes[name][sig] = int("0x" + sha3_result.hexdigest()[:8], 16)
+            if "type" in sig and sig["type"] == "function":
+                sig_name = sig["name"]
+                arguments = ",".join([x["type"] for x in sig["inputs"]])
+                sig = f"{sig_name}({arguments})"
+                sha3_result = sha3.keccak_256()
+                sha3_result.update(sig.encode("utf-8"))
+                self._hashes[name][sig] = int(f"0x{sha3_result.hexdigest()[:8]}", 16)
 
     # endregion
     ###################################################################################
@@ -600,23 +608,22 @@ class CompilationUnit:
         :param name: contract
         :return: A dictionary {event signature -> topic hash, [is_indexed for each parameter]}
         """
-        if not name in self._events:
+        if name not in self._events:
             self._compute_topics_events(name)
         return self._events[name]
 
     def _compute_topics_events(self, name: str) -> None:
         self._events[name] = {}
         for sig in self.abi(name):
-            if "type" in sig:
-                if sig["type"] == "event":
-                    sig_name = sig["name"]
-                    arguments = ",".join([x["type"] for x in sig["inputs"]])
-                    indexes = [x.get("indexed", False) for x in sig["inputs"]]
-                    sig = f"{sig_name}({arguments})"
-                    sha3_result = sha3.keccak_256()
-                    sha3_result.update(sig.encode("utf-8"))
+            if "type" in sig and sig["type"] == "event":
+                sig_name = sig["name"]
+                arguments = ",".join([x["type"] for x in sig["inputs"]])
+                indexes = [x.get("indexed", False) for x in sig["inputs"]]
+                sig = f"{sig_name}({arguments})"
+                sha3_result = sha3.keccak_256()
+                sha3_result.update(sig.encode("utf-8"))
 
-                    self._events[name][sig] = (int("0x" + sha3_result.hexdigest()[:8], 16), indexes)
+                self._events[name][sig] = int(f"0x{sha3_result.hexdigest()[:8]}", 16), indexes
 
     # endregion
     ###################################################################################

@@ -55,17 +55,20 @@ def export_to_truffle(crytic_compile: "CryticCompile", **kwargs: str) -> List[st
         output = {
             "contractName": contract_name,
             "abi": compilation_unit.abi(contract_name),
-            "bytecode": "0x" + compilation_unit.bytecode_init(contract_name),
-            "deployedBytecode": "0x" + compilation_unit.bytecode_runtime(contract_name),
+            "bytecode": f"0x{compilation_unit.bytecode_init(contract_name)}",
+            "deployedBytecode": f"0x{compilation_unit.bytecode_runtime(contract_name)}",
             "ast": compilation_unit.ast(filename.absolute),
-            "userdoc": compilation_unit.natspec[contract_name].userdoc.export(),
+            "userdoc": compilation_unit.natspec[
+                contract_name
+            ].userdoc.export(),
             "devdoc": compilation_unit.natspec[contract_name].devdoc.export(),
         }
+
         results.append(output)
 
         # If we have an export directory, export it.
 
-        path = os.path.join(export_dir, contract_name + ".json")
+        path = os.path.join(export_dir, f"{contract_name}.json")
         with open(path, "w", encoding="utf8") as file_desc:
             json.dump(output, file_desc)
 

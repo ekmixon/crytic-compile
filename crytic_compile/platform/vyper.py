@@ -103,8 +103,7 @@ class Vyper(AbstractPlatform):
         :param target:
         :return:
         """
-        vyper_ignore = kwargs.get("vyper_ignore", False)
-        if vyper_ignore:
+        if vyper_ignore := kwargs.get("vyper_ignore", False):
             return False
         return os.path.isfile(target) and target.endswith(".vy")
 
@@ -120,8 +119,9 @@ class Vyper(AbstractPlatform):
 def _run_vyper(filename: str, vyper: str, env: Dict = None, working_dir: str = None) -> Dict:
     if not os.path.isfile(filename):
         raise InvalidCompilation(
-            "{} does not exist (are you in the correct directory?)".format(filename)
+            f"{filename} does not exist (are you in the correct directory?)"
         )
+
 
     cmd = [vyper, filename, "-f", "combined_json"]
 
@@ -147,8 +147,9 @@ def _get_vyper_ast(
 ) -> Dict:
     if not os.path.isfile(filename):
         raise InvalidCompilation(
-            "{} does not exist (are you in the correct directory?)".format(filename)
+            f"{filename} does not exist (are you in the correct directory?)"
         )
+
 
     cmd = [vyper, filename, "-f", "ast"]
 

@@ -54,10 +54,10 @@ class Embark(AbstractPlatform):
             embark_json = json.load(file_desc)
         if embark_overwrite_config:
             write_embark_json = False
-            if not "plugins" in embark_json:
+            if "plugins" not in embark_json:
                 embark_json["plugins"] = {plugin_name: {"flags": ""}}
                 write_embark_json = True
-            elif not plugin_name in embark_json["plugins"]:
+            elif plugin_name not in embark_json["plugins"]:
                 embark_json["plugins"][plugin_name] = {"flags": ""}
                 write_embark_json = True
             if write_embark_json:
@@ -74,14 +74,16 @@ class Embark(AbstractPlatform):
                     # pylint: disable=raise-missing-from
                     raise InvalidCompilation(error)
 
-        else:
-            if (not "plugins" in embark_json) or (not plugin_name in embark_json["plugins"]):
-                raise InvalidCompilation(
-                    "embark-contract-info plugin was found in embark.json. "
-                    "Please install the plugin (see "
-                    "https://github.com/crytic/crytic-compile/wiki/Usage#embark)"
-                    ", or use --embark-overwrite-config."
-                )
+        elif (
+            "plugins" not in embark_json
+            or plugin_name not in embark_json["plugins"]
+        ):
+            raise InvalidCompilation(
+                "embark-contract-info plugin was found in embark.json. "
+                "Please install the plugin (see "
+                "https://github.com/crytic/crytic-compile/wiki/Usage#embark)"
+                ", or use --embark-overwrite-config."
+            )
 
         if not embark_ignore_compile:
             try:
@@ -119,7 +121,7 @@ class Embark(AbstractPlatform):
                 compilation_unit.asts[filename.absolute] = ast
                 crytic_compile.filenames.add(filename)
 
-            if not "contracts" in targets_loaded:
+            if "contracts" not in targets_loaded:
                 LOGGER.error(
                     "Incorrect json file generated. Are you using %s >= 1.1.0?", plugin_name
                 )
@@ -167,8 +169,7 @@ class Embark(AbstractPlatform):
         :param target:
         :return:
         """
-        embark_ignore = kwargs.get("embark_ignore", False)
-        if embark_ignore:
+        if embark_ignore := kwargs.get("embark_ignore", False):
             return False
         return os.path.isfile(os.path.join(target, "embark.json"))
 
@@ -204,14 +205,15 @@ def _get_version(target: str) -> CompilerVersion:
     with open(os.path.join(target, "embark.json"), encoding="utf8") as file_desc:
         config = json.load(file_desc)
         version = "0.5.0"  # default version with Embark 0.4
-        if "versions" in config:
-            if "solc" in config["versions"]:
-                version = config["versions"]["solc"]
+        if "versions" in config and "solc" in config["versions"]:
+            version = config["versions"]["solc"]
         optimized = False
-        if "options" in config:
-            if "solc" in config["options"]:
-                if "optimize" in config["options"]["solc"]:
-                    optimized = config["options"]["solc"]
+        if (
+            "options" in config
+            and "solc" in config["options"]
+            and "optimize" in config["options"]["solc"]
+        ):
+            optimized = config["options"]["solc"]
 
     return CompilerVersion(compiler="solc-js", version=version, optimized=optimized)
 

@@ -26,8 +26,7 @@ def guess_tests(target: str) -> List[str]:
     if package_path.is_file():
         with open(package_path, encoding="utf8") as package_f:
             package = json.load(package_f)
-            if "scripts" in package:
-                if "test" in package["scripts"]:
-                    targets += package["scripts"]["test"]
+            if "scripts" in package and "test" in package["scripts"]:
+                targets += package["scripts"]["test"]
 
     return targets

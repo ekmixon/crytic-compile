@@ -124,8 +124,7 @@ class Dapp(AbstractPlatform):
         :param target:
         :return:
         """
-        dapp_ignore = kwargs.get("dapp_ignore", False)
-        if dapp_ignore:
+        if dapp_ignore := kwargs.get("dapp_ignore", False):
             return False
         makefile = os.path.join(target, "Makefile")
         if os.path.isfile(makefile):
@@ -185,7 +184,7 @@ def _get_version(target: str) -> CompilerVersion:
     :param target:
     :return:
     """
-    files = glob.glob(target + "/**/*meta.json", recursive=True)
+    files = glob.glob(f"{target}/**/*meta.json", recursive=True)
     version = None
     optimized = None
     compiler = "solc"
@@ -193,14 +192,15 @@ def _get_version(target: str) -> CompilerVersion:
         if version is None:
             with open(file, encoding="utf8") as file_desc:
                 config = json.load(file_desc)
-            if "compiler" in config:
-                if "version" in config["compiler"]:
-                    version = re.findall(r"\d+\.\d+\.\d+", config["compiler"]["version"])
-                    assert version
-            if "settings" in config:
-                if "optimizer" in config["settings"]:
-                    if "enabled" in config["settings"]["optimizer"]:
-                        optimized = config["settings"]["optimizer"]["enabled"]
+            if "compiler" in config and "version" in config["compiler"]:
+                version = re.findall(r"\d+\.\d+\.\d+", config["compiler"]["version"])
+                assert version
+            if (
+                "settings" in config
+                and "optimizer" in config["settings"]
+                and "enabled" in config["settings"]["optimizer"]
+            ):
+                optimized = config["settings"]["optimizer"]["enabled"]
 
     return CompilerVersion(compiler=compiler, version=version, optimized=optimized)
 

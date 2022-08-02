@@ -84,8 +84,7 @@ class Brownie(AbstractPlatform):
         :param target:
         :return:
         """
-        brownie_ignore = kwargs.get("brownie_ignore", False)
-        if brownie_ignore:
+        if brownie_ignore := kwargs.get("brownie_ignore", False):
             return False
         # < 1.1.0: brownie-config.json
         # >= 1.1.0: brownie-config.yaml
@@ -192,7 +191,7 @@ def _get_version(compiler: Dict) -> str:
     """
     version = compiler.get("version", "")
     version = version[len("Version: ") :]
-    version = version[0 : version.find("+")]
+    version = version[:version.find("+")]
     return version
 
 

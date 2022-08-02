@@ -48,10 +48,11 @@ SUPPORTED_NETWORK = {
 
 
 def _handle_bytecode(crytic_compile: "CryticCompile", target: str, result_b: bytes) -> None:
-    # There is no direct API to get the bytecode from etherscan
-    # The page changes from time to time, we use for now a simple parsing, it will not be robust
-    begin = """Search Algorithm">\nSimilar Contracts</button>\n"""
-    begin += """<div id="dividcode">\n<pre class=\'wordwrap\' style=\'height: 15pc;\'>0x"""
+    begin = (
+        """Search Algorithm">\nSimilar Contracts</button>\n"""
+        + """<div id="dividcode">\n<pre class=\'wordwrap\' style=\'height: 15pc;\'>0x"""
+    )
+
     result = result_b.decode("utf8")
     # Removing everything before the begin string
     result = result[result.find(begin) + len(begin) :]
@@ -61,7 +62,7 @@ def _handle_bytecode(crytic_compile: "CryticCompile", target: str, result_b: byt
 
     contract_filename = Filename(absolute="", relative="", short="", used="")
 
-    compilation_unit = CompilationUnit(crytic_compile, str(target))
+    compilation_unit = CompilationUnit(crytic_compile, target)
 
     compilation_unit.contracts_names.add(contract_name)
     compilation_unit.contracts_filenames[contract_name] = contract_filename
@@ -120,14 +121,16 @@ def _handle_multiple_files(
         # start by assuming that the targeted file is the first one returned
         if returned_filename is None:
             returned_filename = path_filename
-        # but if later on a file exists whose name matches the contract name reported by Etherscan, use that
         elif path_filename.name == f"{contract_name}.sol":
             if returned_filename.name == path_filename.name:
                 # if there are multiple contracts with the same name as the targeted file, we cannot know which one to pick
                 LOGGER.error(
                     "Duplicate contract name in etherscan results, couldn't decide on contract to use"
                 )
-                raise InvalidCompilation("Duplicate contract name in etherscan results of " + addr)
+                raise InvalidCompilation(
+                    f"Duplicate contract name in etherscan results of {addr}"
+                )
+
             returned_filename = path_filename
 
         path_filename = Path(directory, path_filename)
@@ -181,7 +184,7 @@ class Etherscan(AbstractPlatform):
         only_source = kwargs.get("etherscan_only_source_code", False)
         only_bytecode = kwargs.get("etherscan_only_bytecode", False)
 
-        etherscan_api_key = kwargs.get("etherscan_api_key", None)
+        etherscan_api_key = kwargs.get("etherscan_api_key")
 
         export_dir = kwargs.get("export_dir", "crytic-export")
         export_dir = os.path.join(
@@ -193,7 +196,7 @@ class Etherscan(AbstractPlatform):
             etherscan_bytecode_url += f"&apikey={etherscan_api_key}"
 
         source_code: str = ""
-        result: Dict[str, Union[bool, str, int]] = dict()
+        result: Dict[str, Union[bool, str, int]] = {}
         contract_name: str = ""
 
         if not only_bytecode:
@@ -208,15 +211,21 @@ class Etherscan(AbstractPlatform):
 
             if "message" not in info:
                 LOGGER.error("Incorrect etherscan request")
-                raise InvalidCompilation("Incorrect etherscan request " + etherscan_url)
+                raise InvalidCompilation(f"Incorrect etherscan request {etherscan_url}")
 
             if not info["message"].startswith("OK"):
                 LOGGER.error("Contract has no public source code")
-                raise InvalidCompilation("Contract has no public source code: " + etherscan_url)
+                raise InvalidCompilation(
+                    f"Contract has no public source code: {etherscan_url}"
+                )
+
 
             if "result" not in info:
                 LOGGER.error("Contract has no public source code")
-                raise InvalidCompilation("Contract has no public source code: " + etherscan_url)
+                raise InvalidCompilation(
+                    f"Contract has no public source code: {etherscan_url}"
+                )
+
 
             result = info["result"][0]
             # Assert to help mypy
@@ -239,7 +248,10 @@ class Etherscan(AbstractPlatform):
 
         if source_code == "":
             LOGGER.error("Contract has no public source code")
-            raise InvalidCompilation("Contract has no public source code: " + etherscan_url)
+            raise InvalidCompilation(
+                f"Contract has no public source code: {etherscan_url}"
+            )
+
 
         if not os.path.exists(export_dir):
             os.makedirs(export_dir)
@@ -308,8 +320,7 @@ class Etherscan(AbstractPlatform):
         :param target:
         :return:
         """
-        etherscan_ignore = kwargs.get("etherscan_ignore", False)
-        if etherscan_ignore:
+        if etherscan_ignore := kwargs.get("etherscan_ignore", False):
             return False
         if target.startswith(tuple(SUPPORTED_NETWORK)):
             target = target[target.find(":") + 1 :]

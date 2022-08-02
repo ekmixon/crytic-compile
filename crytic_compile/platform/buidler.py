@@ -49,7 +49,7 @@ class Buidler(AbstractPlatform):
         buidler_ignore_compile = kwargs.get("buidler_ignore_compile", False) or kwargs.get(
             "ignore_compile", False
         )
-        buidler_working_dir = kwargs.get("buidler_working_dir", None)
+        buidler_working_dir = kwargs.get("buidler_working_dir")
         # See https://github.com/crytic/crytic-compile/issues/116
         skip_directory_name_fix = kwargs.get("buidler_skip_directory_name_fix", False)
 
@@ -81,8 +81,11 @@ class Buidler(AbstractPlatform):
 
         if not os.path.isfile(os.path.join(self._target, target_solc_file)):
             if os.path.isfile(os.path.join(self._target, target_vyper_file)):
-                txt = "Vyper not yet supported with buidler."
-                txt += " Please open an issue in https://github.com/crytic/crytic-compile"
+                txt = (
+                    "Vyper not yet supported with buidler."
+                    + " Please open an issue in https://github.com/crytic/crytic-compile"
+                )
+
                 raise InvalidCompilation(txt)
             txt = f"`buidler compile` failed. Can you run it?\n{os.path.join(self._target, target_solc_file)} not found"
             raise InvalidCompilation(txt)
@@ -96,8 +99,9 @@ class Buidler(AbstractPlatform):
         )
 
         skip_filename = compilation_unit.compiler_version.version in [
-            f"0.4.{x}" for x in range(0, 10)
+            f"0.4.{x}" for x in range(10)
         ]
+
 
         with open(target_solc_file, encoding="utf8") as file_desc:
             targets_json = json.load(file_desc)
@@ -111,7 +115,7 @@ class Buidler(AbstractPlatform):
                             original_filename.startswith("ontracts/")
                             and not skip_directory_name_fix
                         ):
-                            original_filename = "c" + original_filename
+                            original_filename = f"c{original_filename}"
 
                         contract_filename = convert_filename(
                             original_filename,
@@ -145,7 +149,7 @@ class Buidler(AbstractPlatform):
                 for path, info in targets_json["sources"].items():
 
                     if path.startswith("ontracts/") and not skip_directory_name_fix:
-                        path = "c" + path
+                        path = f"c{path}"
 
                     if skip_filename:
                         path = convert_filename(
@@ -169,8 +173,7 @@ class Buidler(AbstractPlatform):
         :param target:
         :return:
         """
-        buidler_ignore = kwargs.get("buidler_ignore", False)
-        if buidler_ignore:
+        if buidler_ignore := kwargs.get("buidler_ignore", False):
             return False
         is_javascript = os.path.isfile(os.path.join(target, "buidler.config.js"))
         is_typescript = os.path.isfile(os.path.join(target, "buidler.config.ts"))

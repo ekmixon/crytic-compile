@@ -59,7 +59,7 @@ class Waffle(AbstractPlatform):
         # Default behaviour (without any config_file)
         build_directory = os.path.join("build")
         compiler = "native"
-        config: Dict = dict()
+        config: Dict = {}
 
         config_file = kwargs.get("waffle_config_file", "waffle.json")
 
@@ -219,8 +219,7 @@ class Waffle(AbstractPlatform):
         :param target:
         :return:
         """
-        waffle_ignore = kwargs.get("waffle_ignore", False)
-        if waffle_ignore:
+        if waffle_ignore := kwargs.get("waffle_ignore", False):
             return False
 
         # Avoid conflicts with hardhat
@@ -303,7 +302,7 @@ def _get_version(compiler: str, cwd: str, config: Optional[Dict] = None) -> str:
             # pylint: disable=raise-missing-from
             raise InvalidCompilation(error)
 
-    elif compiler in ["solc-js"]:
+    elif compiler in {"solc-js"}:
         cmd = ["solcjs", "--version"]
         try:
             with subprocess.Popen(

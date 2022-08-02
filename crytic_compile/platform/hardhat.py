@@ -49,7 +49,7 @@ class Hardhat(AbstractPlatform):
 
         build_directory = Path(kwargs.get("hardhat_artifacts_directory", "artifacts"), "build-info")
 
-        hardhat_working_dir = kwargs.get("hardhat_working_dir", None)
+        hardhat_working_dir = kwargs.get("hardhat_working_dir")
 
         base_cmd = ["hardhat"]
         if not kwargs.get("npx_disable", False):
@@ -89,7 +89,7 @@ class Hardhat(AbstractPlatform):
             build_info = Path(build_directory, file)
 
             # The file here should always ends .json, but just in case use ife
-            uniq_id = file if ".json" not in file else file[0:-5]
+            uniq_id = file if ".json" not in file else file[:-5]
             compilation_unit = CompilationUnit(crytic_compile, uniq_id)
 
             with open(build_info, encoding="utf8") as file_desc:
@@ -107,8 +107,9 @@ class Hardhat(AbstractPlatform):
                 )
 
                 skip_filename = compilation_unit.compiler_version.version in [
-                    f"0.4.{x}" for x in range(0, 10)
+                    f"0.4.{x}" for x in range(10)
                 ]
+
 
                 if "contracts" in targets_json:
                     for original_filename, contracts_info in targets_json["contracts"].items():
@@ -170,8 +171,7 @@ class Hardhat(AbstractPlatform):
         :param target:
         :return:
         """
-        hardhat_ignore = kwargs.get("hardhat_ignore", False)
-        if hardhat_ignore:
+        if hardhat_ignore := kwargs.get("hardhat_ignore", False):
             return False
         return os.path.isfile(os.path.join(target, "hardhat.config.js")) | os.path.isfile(
             os.path.join(target, "hardhat.config.ts")

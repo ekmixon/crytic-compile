@@ -42,7 +42,7 @@ class SolcStandardJson(Solc):
         super().__init__(str(target), **kwargs)
 
         if target is None:
-            self._json: Dict = dict()
+            self._json: Dict = {}
         elif isinstance(target, str):
             if os.path.isfile(target):
                 with open(target, mode="r", encoding="utf-8") as target_file:
@@ -52,8 +52,6 @@ class SolcStandardJson(Solc):
 
         elif isinstance(target, dict):
             self._json = target
-        #        elif isinstance(target, SolcStandardJson):
-        #            self._json = target._json
         else:
             raise ValueError("Invalid target for solc standard json input.")
 
@@ -137,8 +135,9 @@ class SolcStandardJson(Solc):
         )
 
         skip_filename = compilation_unit.compiler_version.version in [
-            f"0.4.{x}" for x in range(0, 10)
+            f"0.4.{x}" for x in range(10)
         ]
+
 
         # Add all remappings
         if solc_remaps:
@@ -238,12 +237,12 @@ def _run_solc_standard_json(
 
     try:
         with subprocess.Popen(
-            cmd,
-            stdin=subprocess.PIPE,
-            stdout=subprocess.PIPE,
-            stderr=subprocess.PIPE,
-            **additional_kwargs,
-        ) as process:
+                    cmd,
+                    stdin=subprocess.PIPE,
+                    stdout=subprocess.PIPE,
+                    stderr=subprocess.PIPE,
+                    **additional_kwargs,
+                ) as process:
             stdout_b, stderr_b = process.communicate(json.dumps(solc_input).encode("utf-8"))
             stdout, stderr = (
                 stdout_b.decode(),
@@ -252,9 +251,7 @@ def _run_solc_standard_json(
 
             solc_json_output = json.loads(stdout)
 
-            # Check for errors and raise them if any exist.
-            solc_errors = solc_json_output.get("errors", [])
-            if solc_errors:
+            if solc_errors := solc_json_output.get("errors", []):
                 solc_error_occurred = False
                 solc_exception_str = ""
                 for solc_error in solc_errors:
